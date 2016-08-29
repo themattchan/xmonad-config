@@ -5,10 +5,13 @@
 {-# LANGUAGE LiberalTypeSynonyms   #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-import           Control.Concurrent          (forkIO, threadDelay)
-import           Control.Monad               (void)
+import           Control.Arrow ((&&&))
+import           Control.Applicative
+import           Control.Monad
 import qualified Data.Map                    as M
 import           Data.Monoid
+
+import           Control.Concurrent          (forkIO, threadDelay)
 import           System.IO                   (hFlush, stdout)
 
 import           XMonad
@@ -93,23 +96,13 @@ myKeymap cfg = [ ("M4-S-<Return>",   startTerminal)
                , ("M4-.",            decrementMaster)
                , ("M4-q",            restartXMonad)
                , ("M4-S-q",          logoutCmd)
-               , ("M4-1",            viewWS 1)
-               , ("M4-2",            viewWS 2)
-               , ("M4-3",            viewWS 3)
-               , ("M4-4",            viewWS 4)
-               , ("M4-5",            viewWS 5)
-               , ("M4-6",            viewWS 6)
-               , ("M4-7",            viewWS 7)
-               , ("M4-8",            viewWS 8)
-               , ("M4-S-1",          moveToWS 1)
-               , ("M4-S-2",          moveToWS 2)
-               , ("M4-S-3",          moveToWS 3)
-               , ("M4-S-4",          moveToWS 4)
-               , ("M4-S-5",          moveToWS 5)
-               , ("M4-S-6",          moveToWS 6)
-               , ("M4-S-7",          moveToWS 7)
-               , ("M4-S-8",          moveToWS 8)
-               , ("M4-w",            viewMonitor 1)
+               ]
+               <>
+               (((mappend "M4-" . show) &&& viewWS) <$> [0..9])
+               <>
+               (((mappend "M4-S-" . show) &&& moveToWS) <$> [0..9])
+               <>
+               [ ("M4-w",            viewMonitor 1)
                , ("M4-e",            viewMonitor 2)
                , ("M4-r",            viewMonitor 3)
                , ("M4-S-w",          moveToMonitor 1)
@@ -178,7 +171,7 @@ myMouse = const $ M.fromList
       snapMagicResize [R,D] (Just 50) (Just 50) w
 
 myWorkspaces :: [WorkspaceId]
-myWorkspaces = [ "1", "2", "3", "4", "5", "6", "7", "8", "9", "0" ]
+myWorkspaces = map show ([1..9] <> [0])
 
 -- FIXME: https://www.reddit.com/r/xmonad/comments/3vkrc3/does_this_layout_exist_if_not_can_anyone_suggest/
 
