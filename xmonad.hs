@@ -98,9 +98,9 @@ myKeymap cfg = [ ("M4-S-<Return>",   startTerminal)
                , ("M4-S-q",          logoutCmd)
                ]
                <>
-               (((mappend "M4-" . show) &&& viewWS) <$> [0..9])
+               (((mappend "M4-" . show) &&& viewWS) <$> [1..9])
                <>
-               (((mappend "M4-S-" . show) &&& moveToWS) <$> [0..9])
+               (((mappend "M4-S-" . show) &&& moveToWS) <$> [1..9])
                <>
                [ ("M4-w",            viewMonitor 1)
                , ("M4-e",            viewMonitor 2)
@@ -171,7 +171,7 @@ myMouse = const $ M.fromList
       snapMagicResize [R,D] (Just 50) (Just 50) w
 
 myWorkspaces :: [WorkspaceId]
-myWorkspaces = map show ([1..9] <> [0])
+myWorkspaces = map show [1..9]
 
 -- FIXME: https://www.reddit.com/r/xmonad/comments/3vkrc3/does_this_layout_exist_if_not_can_anyone_suggest/
 
