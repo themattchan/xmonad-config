@@ -169,9 +169,10 @@ myKeymap cfg = [ ("M4-S-<Return>",   startTerminal)
 -- > buttons: 1 = left, 2 = middle, 3 = right, 4 = scroll down, 5 = scroll up
 -- > myMouse :: MonadIO m => [((KeyMask, Button), m ())]
 myMouse :: t -> M.Map (KeyMask, Button) (Window -> X ())
-myMouse _ =  M.fromList [ ((mod4Mask, button1), floatMove)
-                        , ((mod4Mask, button3), resizeMove)
-                        ]
+myMouse = const $ M.fromList
+  [ ((mod4Mask, button1), floatMove)
+  , ((mod4Mask, button3), resizeMove)
+  ]
   where
     floatMove w = do
       focus w
@@ -182,17 +183,8 @@ myMouse _ =  M.fromList [ ((mod4Mask, button1), floatMove)
       mouseResizeWindow w
       snapMagicResize [R,D] (Just 50) (Just 50) w
 
--- | My workspaces
 myWorkspaces :: [WorkspaceId]
-myWorkspaces = [ "1"
-               , "2"
-               , "3"
-               , "4"
-               , "5"
-               , "6"
-               , "7"
-               , "8"
-               ]
+myWorkspaces = [ "1", "2", "3", "4", "5", "6", "7", "8", "9", "0" ]
 
 -- FIXME: https://www.reddit.com/r/xmonad/comments/3vkrc3/does_this_layout_exist_if_not_can_anyone_suggest/
 
@@ -416,7 +408,7 @@ queryX11 (QArbitrary p s) = stringProperty p =? s
 -- <XF86KbdLightOnOff>
 -- <XF86KbdBrightnessUp>
 -- <XF86KbdBrightnessDown>
--- <XF86Standby>
+-- <XF86Standby>nnnn
 -- <XF86AudioLowerVolume>
 -- <XF86AudioMute>
 -- <XF86AudioRaiseVolume>
