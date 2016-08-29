@@ -4,25 +4,20 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE LiberalTypeSynonyms   #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE PartialTypeSignatures #-}
 
---import           Data.Attoparsec
---import           Data.Data
+import           Control.Concurrent          (forkIO, threadDelay)
+import           Control.Monad               (void)
 import qualified Data.Map                    as M
 import           Data.Monoid
---import           Language.Haskell.TH
---import           Language.Haskell.TH          (Exp (..), Pat (..), Q)
---import qualified Language.Haskell.TH          as TH
---import           Language.Haskell.TH.Quote
---import           System.Exit
+import           System.IO                   (hFlush, stdout)
+
 import           XMonad
 import           XMonad.Actions.FloatSnap
---import qualified XMonad.Core                  as XMonad
+import           XMonad.Config.Xfce
 import           XMonad.Hooks.EwmhDesktops
 import           XMonad.Hooks.ManageDocks
 import           XMonad.Hooks.ManageHelpers
 import           XMonad.Hooks.SetWMName
---import           XMonad.Layout.LayoutModifier (ModifiedLayout)
 import qualified XMonad.Layout.Fullscreen    as F
 import           XMonad.Layout.NoBorders
 import           XMonad.Layout.ResizableTile
@@ -30,9 +25,6 @@ import qualified XMonad.StackSet             as W
 import           XMonad.Util.Cursor
 import           XMonad.Util.EZConfig
 
-import           Control.Concurrent          (forkIO, threadDelay)
-import           Control.Monad               (void)
-import           System.IO                   (hFlush, stdout)
 
 --------------------------------------------------------------------------------
 ----------------------------------- Commands -----------------------------------
@@ -40,10 +32,10 @@ import           System.IO                   (hFlush, stdout)
 
 -- | Launch XMonad
 main :: IO ()
-main = fixPanel >> xmonad myConfig
+main = restartXfcePanel >> xmonad (ewmh myConfig)
 
-fixPanel :: IO ()
-fixPanel = void $ forkIO $ do
+restartXfcePanel :: IO ()
+restartXfcePanel = void $ forkIO $ do
   putStrLn "Delay starting"
   threadDelay 5000000
   putStrLn "Delay done"
@@ -52,22 +44,23 @@ fixPanel = void $ forkIO $ do
   spawn "xfce4-panel -r"
   putStrLn "[DONE]"
 
-myConfig = ewmh $ def { borderWidth        = 1
-                      , normalBorderColor  = "gray"
-                      , focusedBorderColor = "red"
-                      , terminal           = "xfce4-terminal"
-                      , focusFollowsMouse  = True
-                      , clickJustFocuses   = True
-                      , modMask            = mod4Mask
-                      , keys               = myKeys
-                      , mouseBindings      = myMouse
-                      , workspaces         = myWorkspaces
-                      , layoutHook         = myLayout
-                      , logHook            = myLogHook
-                      , startupHook        = myStartupHook
-                      , handleEventHook    = myHandleEventHook
-                      , manageHook         = myManageHook
-                      }
+myConfig = xfceConfig
+  { borderWidth        = 2
+  , normalBorderColor  = "grey"
+  , focusedBorderColor = "red"
+  , terminal           = "konsole"
+  , focusFollowsMouse  = True
+  , clickJustFocuses   = True
+  , modMask            = mod4Mask
+  , keys               = myKeys
+  , mouseBindings      = myMouse
+  , workspaces         = myWorkspaces
+  , layoutHook         = myLayout
+  , logHook            = myLogHook
+  , startupHook        = myStartupHook
+  , handleEventHook    = myHandleEventHook
+  , manageHook         = myManageHook
+  }
 
 -- | Separated from myKeymap so we can do a validity check at startup
 myKeys :: XConfig Layout -> M.Map (KeyMask, KeySym) (X ())
@@ -123,17 +116,13 @@ myKeymap cfg = [ ("M4-S-<Return>",   startTerminal)
                , ("M4-S-e",          moveToMonitor 2)
                , ("M4-S-r",          moveToMonitor 3)
                , ("M1-M4-b",         toggleStruts)
-               , ("M4-c",            chromiumCmd)
-               , ("M4-M1-c",         chromiumCmd)
-               , ("M1-M4-k",         conkerorCmd)
-               , ("M1-M4-t",         teamspeakCmd)
                , ("M4-z",            dmenuCmd)
                , ("M1-M4-z",         dmenuCmd)
-               , ("M4-m",            mocCmd)
-               , ("M1-M4-m",         mocCmd)
+--               , ("M4-m",            mocCmd)
+--               , ("M1-M4-m",         mocCmd)
+--               , ("<XF86AudioPlay>", mocPlayPauseCmd)
                , ("M1-M4-e",         emacsCmd)
                , ("M1-M4-p",         pavucontrolCmd)
-               , ("<XF86AudioPlay>", mocPlayPauseCmd)
                , ("M4--",            shrinkTile)
                , ("M4-=",            expandTile)
                ]
@@ -150,9 +139,18 @@ myKeymap cfg = [ ("M4-S-<Return>",   startTerminal)
     swapUp          = windows W.swapUp
     shrinkMaster    = sendMessage Shrink
     expandMaster    = sendMessage Expand
-    retileWindow    = withFocused $ windows . W.sink
     incrementMaster = sendMessage $ IncMasterN 1
     decrementMaster = sendMessage $ IncMasterN (-1)
+    toggleStruts    = sendMessage ToggleStruts
+    shrinkTile      = sendMessage MirrorShrink
+    expandTile      = sendMessage MirrorExpand
+    retileWindow    = withFocused $ windows . W.sink
+    doWorkspace f i = windows . f $ XMonad.workspaces cfg !! (i - 1)
+    doMonitor f i   = screenWorkspace i >>= flip whenJust (windows . f)
+    viewWS          = doWorkspace W.greedyView
+    moveToWS        = doWorkspace W.shift
+    viewMonitor     = doMonitor W.view
+    moveToMonitor   = doMonitor W.shift
     logoutCmd       = spawn "xfce4-session-logout"
     restartXMonad   =
       spawn $ unwords [ "if type xmonad; then"
@@ -161,30 +159,15 @@ myKeymap cfg = [ ("M4-S-<Return>",   startTerminal)
                       , "xmessage xmonad not in PATH: \"$PATH\";"
                       , "fi"
                       ]
-    doWorkspace f i = windows $ f $ XMonad.workspaces cfg !! (i - 1)
-    doMonitor f i   = screenWorkspace i >>= flip whenJust (windows . f)
-    viewWS          = doWorkspace W.greedyView
-    moveToWS        = doWorkspace W.shift
-    viewMonitor     = doMonitor W.view
-    moveToMonitor   = doMonitor W.shift
-    toggleStruts    = sendMessage ToggleStruts
-    chromiumCmd     = spawn "chromium"
-    conkerorCmd     = spawn "conkeror"
-    teamspeakCmd    = spawn "ts3client"
     dmenuCmd        = spawn "yeganesh -x | bash"
     emacsCmd        = spawn "emacs"
-    mocCmd          = spawn "xfce4-terminal -x mocp"
-    mocPlayPauseCmd = spawn "mocp -G"
+    -- mocCmd          = spawn "xfce4-terminal -x mocp"
+    -- mocPlayPauseCmd = spawn "mocp -G"
     pavucontrolCmd  = spawn "pavucontrol"
-    -- xfceRunCmd      = spawn "xfrun4"
-    -- xfceAppMenuCmd  = spawn "xfce4-appfinder"
-    -- logoutCmd       = spawn "xfce4-session-logout"
-    shrinkTile      = sendMessage MirrorShrink
-    expandTile      = sendMessage MirrorExpand
 
 -- | Mouse bindings
---   buttons: 1 = left, 2 = middle, 3 = right, 4 = scroll down, 5 = scroll up
---myMouse :: MonadIO m => [((KeyMask, Button), m ())]
+-- > buttons: 1 = left, 2 = middle, 3 = right, 4 = scroll down, 5 = scroll up
+-- > myMouse :: MonadIO m => [((KeyMask, Button), m ())]
 myMouse :: t -> M.Map (KeyMask, Button) (Window -> X ())
 myMouse _ =  M.fromList [ ((mod4Mask, button1), floatMove)
                         , ((mod4Mask, button3), resizeMove)
@@ -194,12 +177,10 @@ myMouse _ =  M.fromList [ ((mod4Mask, button1), floatMove)
       focus w
       mouseMoveWindow w
       snapMagicMove (Just 50) (Just 50) w
-      --windows W.shiftMaster
     resizeMove w = do
       focus w
       mouseResizeWindow w
       snapMagicResize [R,D] (Just 50) (Just 50) w
-      --windows W.shiftMaster
 
 -- | My workspaces
 myWorkspaces :: [WorkspaceId]
@@ -236,7 +217,7 @@ myLogHook = return ()
 
 -- | My event handling hook
 myHandleEventHook :: Event -> X All
-myHandleEventHook = fullscreenEventHook
+myHandleEventHook = F.fullscreenEventHook
 
 -- | My startup hook
 myStartupHook :: X ()
@@ -244,15 +225,16 @@ myStartupHook = do
   setWMName "LG3D"
   setDefaultCursor xC_left_ptr
   return ()
-  checkKeymap def (myKeymap undefined)
+  checkKeymap myConfig (myKeymap undefined)
   return ()
 
 -- | The 'ManageHook' for my XMonad configuration
 myManageHook :: ManageHook
-myManageHook = composeAll [ dialogMH
-                          , strutsMH
-                          , fullscreenMH
-                          , specialMH ]
+myManageHook = composeAll
+  [ dialogMH
+  , strutsMH
+  , fullscreenMH
+  , specialMH ]
   where
     dialogMH     = isDialog --> doCenterFloat   -- Float dialog boxes
     strutsMH     = manageDocks                  -- Avoid struts (e.g.: a panel)
@@ -277,6 +259,7 @@ specialWindows =
   , (QClassName "Ristretto",                             doCenterFloat)
   , (QClassName "Unetbootin",                            doCenterFloat)
   , (QClassName "Xfce4-about",                           doCenterFloat)
+  , (QClassName "Xfce4-appfinder",                       doCenterFloat)
   , (QClassName "Xfce4-accessibility-settings",          doCenterFloat)
   , (QClassName "Xfce4-appearance-settings",             doCenterFloat)
   , (QClassName "Xfce4-display-settings",                doCenterFloat)
