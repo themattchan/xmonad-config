@@ -118,12 +118,9 @@ myKeymap cfg = [ ("M4-S-<Return>",   startTerminal)
                , ("M1-M4-b",         toggleStruts)
                , ("M4-z",            dmenuCmd)
                , ("M1-M4-z",         dmenuCmd)
---               , ("M4-m",            mocCmd)
---               , ("M1-M4-m",         mocCmd)
---               , ("<XF86AudioPlay>", mocPlayPauseCmd)
-               , ("M1-M4-e",         emacsCmd)
-               , ("M1-M4-f",         firefoxCmd)
-               , ("M1-M4-p",         pavucontrolCmd)
+               , ("M1-M4-e",         spawn "emacs")
+               , ("M1-M4-f",         spawn "firefox")
+               , ("M1-M4-p",         spawn "pavucontrol")
                , ("M4--",            shrinkTile)
                , ("M4-=",            expandTile)
                ]
@@ -161,11 +158,6 @@ myKeymap cfg = [ ("M4-S-<Return>",   startTerminal)
                       , "fi"
                       ]
     dmenuCmd        = spawn "yeganesh -x | bash"
-    emacsCmd        = spawn "emacs"
-    firefoxCmd      = spawn "firefox"
-    -- mocCmd          = spawn "xfce4-terminal -x mocp"
-    -- mocPlayPauseCmd = spawn "mocp -G"
-    pavucontrolCmd  = spawn "pavucontrol"
 
 -- | Mouse bindings
 -- > buttons: 1 = left, 2 = middle, 3 = right, 4 = scroll down, 5 = scroll up
@@ -225,15 +217,11 @@ myStartupHook = do
 -- | The 'ManageHook' for my XMonad configuration
 myManageHook :: ManageHook
 myManageHook = composeAll
-  [ dialogMH
-  , strutsMH
-  , fullscreenMH
-  , specialMH ]
-  where
-    dialogMH     = isDialog --> doCenterFloat   -- Float dialog boxes
-    strutsMH     = manageDocks                  -- Avoid struts (e.g.: a panel)
-    fullscreenMH = isFullscreen --> doFullFloat -- Fixes fullscreen windows
-    specialMH    = composeAll $ map (uncurry applyProp) specialWindows
+  [ isDialog --> doCenterFloat   -- Float dialog boxes
+  , manageDocks                  -- Avoid struts (e.g.: a panel)
+  , isFullscreen --> doFullFloat -- Fixes fullscreen windows
+  , composeAll $ map (uncurry applyProp) specialWindows
+  ]
 
 -- | This is a list of programs where XMonad's default behavior is not ideal.
 specialWindows :: [(X11Query, ManageHook)]
