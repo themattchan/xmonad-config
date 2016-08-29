@@ -77,46 +77,47 @@ myKeys cfg = mkKeymap cfg (myKeymap cfg)
 --   A complete list of key names and other information
 --   is available at the bottom of this file.
 myKeymap :: XConfig Layout -> [(String, X ())]
-myKeymap cfg = [ ("M4-S-<Return>",   startTerminal)
-               , ("M4-S-c",          closeFocused)
-               , ("M4-<Space>",      nextLayout)
-               , ("M4-S-<Space>",    resetLayout)
-               , ("M4-n",            refresh)
-               , ("M4-<Tab>",        focusDown)
-               , ("M4-S-<Tab>",      focusUp)
-               , ("M4-j",            focusDown)
-               , ("M4-k",            focusUp)
-               , ("M4-<Return>",     swapMaster)
-               , ("M4-S-j",          swapDown)
-               , ("M4-S-k",          swapUp)
-               , ("M4-h",            shrinkMaster)
-               , ("M4-l",            expandMaster)
-               , ("M4-t",            retileWindow)
-               , ("M4-,",            incrementMaster)
-               , ("M4-.",            decrementMaster)
-               , ("M4-q",            restartXMonad)
-               , ("M4-S-q",          logoutCmd)
-               ]
-               <>
-               (((mappend "M4-" . show) &&& viewWS) <$> [1..9])
-               <>
-               (((mappend "M4-S-" . show) &&& moveToWS) <$> [1..9])
-               <>
-               [ ("M4-w",            viewMonitor 1)
-               , ("M4-e",            viewMonitor 2)
-               , ("M4-r",            viewMonitor 3)
-               , ("M4-S-w",          moveToMonitor 1)
-               , ("M4-S-e",          moveToMonitor 2)
-               , ("M4-S-r",          moveToMonitor 3)
-               , ("M1-M4-b",         toggleStruts)
-               , ("M4-z",            dmenuCmd)
-               , ("M1-M4-z",         dmenuCmd)
-               , ("M1-M4-e",         spawn "emacs")
-               , ("M1-M4-f",         spawn "firefox")
-               , ("M1-M4-p",         spawn "pavucontrol")
-               , ("M4--",            shrinkTile)
-               , ("M4-=",            expandTile)
-               ]
+myKeymap cfg =
+  [ ("M4-S-<Return>",   startTerminal)
+  , ("M4-S-c",          closeFocused)
+  , ("M4-<Space>",      nextLayout)
+  , ("M4-S-<Space>",    resetLayout)
+  , ("M4-n",            refresh)
+  , ("M4-<Tab>",        focusDown)
+  , ("M4-S-<Tab>",      focusUp)
+  , ("M4-j",            focusDown)
+  , ("M4-k",            focusUp)
+  , ("M4-<Return>",     swapMaster)
+  , ("M4-S-j",          swapDown)
+  , ("M4-S-k",          swapUp)
+  , ("M4-h",            shrinkMaster)
+  , ("M4-l",            expandMaster)
+  , ("M4-t",            retileWindow)
+  , ("M4-,",            incrementMaster)
+  , ("M4-.",            decrementMaster)
+  , ("M4-q",            restartXMonad)
+  , ("M4-S-q",          logoutCmd)
+  ]
+  <>
+  (((mappend "M4-" . show) &&& viewWS) <$> [1..9])
+  <>
+  (((mappend "M4-S-" . show) &&& moveToWS) <$> [1..9])
+  <>
+  [ ("M4-w",            viewMonitor 1)
+  , ("M4-e",            viewMonitor 2)
+  , ("M4-r",            viewMonitor 3)
+  , ("M4-S-w",          moveToMonitor 1)
+  , ("M4-S-e",          moveToMonitor 2)
+  , ("M4-S-r",          moveToMonitor 3)
+  , ("M1-M4-b",         toggleStruts)
+  , ("M4-z",            dmenuCmd)
+  , ("M1-M4-z",         dmenuCmd)
+  , ("M1-M4-e",         spawn "emacs")
+  , ("M1-M4-f",         spawn "firefox")
+  , ("M1-M4-p",         spawn "pavucontrol")
+  , ("M4--",            shrinkTile)
+  , ("M4-=",            expandTile)
+  ]
   where
     startTerminal   = spawn $ XMonad.terminal cfg
     closeFocused    = kill
