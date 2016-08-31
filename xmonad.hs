@@ -138,7 +138,7 @@ myKeymap cfg =
     expandTile      = sendMessage MirrorExpand
     retileWindow    = withFocused $ windows . W.sink
     doWorkspace f i = windows . f $ XMonad.workspaces cfg !! (i - 1)
-    doMonitor f i   = screenWorkspace i >>= flip whenJust (windows . f)
+    doMonitor   f i = screenWorkspace i >>= flip whenJust (windows . f)
     viewWS          = doWorkspace W.greedyView
     moveToWS        = doWorkspace W.shift
     viewMonitor     = doMonitor W.view
@@ -205,8 +205,8 @@ myStartupHook = do
   setWMName "LG3D"
   setDefaultCursor xC_left_ptr
   return ()
-  checkKeymap myConfig (myKeymap undefined)
-  return ()
+--  checkKeymap myConfig (myKeymap undefined)
+--  return ()
 
 -- | The 'ManageHook' for my XMonad configuration
 myManageHook :: ManageHook
@@ -214,7 +214,7 @@ myManageHook = composeAll
   [ isDialog --> doCenterFloat   -- Float dialog boxes
   , manageDocks                  -- Avoid struts (e.g.: a panel)
   , isFullscreen --> doFullFloat -- Fixes fullscreen windows
-  , composeAll $ map (uncurry applyProp) specialWindows
+  , foldMap (uncurry applyProp) specialWindows
   ]
 
 -- | This is a list of programs where XMonad's default behavior is not ideal.
