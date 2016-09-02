@@ -49,8 +49,8 @@ restartXfcePanel = void $ forkIO $ do
 
 myConfig = xfceConfig
   { borderWidth        = 2
-  , normalBorderColor  = "grey"
-  , focusedBorderColor = "red"
+  , normalBorderColor  = myNormalBorderColor
+  , focusedBorderColor = myFocusedBorderColor
   , terminal           = "konsole"
   , focusFollowsMouse  = True
   , clickJustFocuses   = True
@@ -64,6 +64,10 @@ myConfig = xfceConfig
   , handleEventHook    = myHandleEventHook
   , manageHook         = myManageHook
   }
+
+myNormalBorderColor, myFocusedBorderColor :: String
+myNormalBorderColor  = "#7c7c7c"
+myFocusedBorderColor = "#ffb6b0"
 
 -- | Separated from myKeymap so we can do a validity check at startup
 myKeys :: XConfig Layout -> M.Map (KeyMask, KeySym) (X ())
