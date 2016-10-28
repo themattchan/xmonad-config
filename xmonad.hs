@@ -10,7 +10,6 @@ import           Control.Applicative
 import           Control.Monad
 import           Data.Foldable
 import qualified Data.Map                    as M
-import qualified Data.Set                    as S
 import           Data.Monoid
 
 import           Control.Concurrent          (forkIO, threadDelay)
@@ -194,7 +193,7 @@ instance Show MyWorkspace where
   show = show . workId
 
 allWorkspaces :: [MyWorkspace]
-allWorkspaces = (enumFromTo Messages Free2)
+allWorkspaces = enumFromTo minBound maxBound
 
 myWorkspaces :: [WorkspaceId]
 myWorkspaces = map show allWorkspaces
