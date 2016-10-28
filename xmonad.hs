@@ -8,7 +8,9 @@
 import           Control.Arrow ((&&&))
 import           Control.Applicative
 import           Control.Monad
+import           Data.Foldable
 import qualified Data.Map                    as M
+import qualified Data.Set                    as S
 import           Data.Monoid
 
 import           Control.Concurrent          (forkIO, threadDelay)
@@ -101,13 +103,7 @@ myKeymap cfg =
   , ("M4-.",            decrementMaster)
   , ("M4-q",            restartXMonad)
   , ("M4-S-q",          logoutCmd)
-  ]
-  <>
-  (((mappend "M4-" . show) &&& viewWS) <$> [1..9])
-  <>
-  (((mappend "M4-S-" . show) &&& moveToWS) <$> [1..9])
-  <>
-  [ ("M4-w",            viewMonitor 1)
+  , ("M4-w",            viewMonitor 1)
   , ("M4-e",            viewMonitor 2)
   , ("M4-r",            viewMonitor 3)
   , ("M4-S-w",          moveToMonitor 1)
@@ -122,6 +118,11 @@ myKeymap cfg =
   , ("M4--",            shrinkTile)
   , ("M4-=",            expandTile)
   ]
+  <>
+  (((mappend "M4-" . show) &&& viewWS) <$> allWorkspaces)
+  <>
+  (((mappend "M4-S-" . show) &&& moveToWS) <$> allWorkspaces)
+
   where
     startTerminal   = spawn $ XMonad.terminal cfg
     closeFocused    = kill
@@ -143,8 +144,8 @@ myKeymap cfg =
     retileWindow    = withFocused $ windows . W.sink
     doWorkspace f i = windows . f $ XMonad.workspaces cfg !! (i - 1)
     doMonitor   f i = screenWorkspace i >>= flip whenJust (windows . f)
-    viewWS          = doWorkspace W.greedyView
-    moveToWS        = doWorkspace W.shift
+    viewWS          = doWorkspace W.greedyView . workId
+    moveToWS        = doWorkspace W.shift . workId
     viewMonitor     = doMonitor W.view
     moveToMonitor   = doMonitor W.shift
     logoutCmd       = spawn "xfce4-session-logout"
@@ -159,7 +160,6 @@ myKeymap cfg =
 
 -- | Mouse bindings
 -- > buttons: 1 = left, 2 = middle, 3 = right, 4 = scroll down, 5 = scroll up
--- > myMouse :: MonadIO m => [((KeyMask, Button), m ())]
 myMouse :: t -> M.Map (KeyMask, Button) (Window -> X ())
 myMouse = const $ M.fromList
   [ ((mod4Mask, button1), floatMove)
@@ -175,8 +175,29 @@ myMouse = const $ M.fromList
       mouseResizeWindow w
       snapMagicResize [R,D] (Just 50) (Just 50) w
 
+data MyWorkspace
+  = Messages
+  | Web1
+  | Web2
+  | Code
+  | Pdf
+  | Term
+  | Files
+  | Free1
+  | Free2
+  deriving (Eq, Bounded, Enum, Ord)
+
+workId :: MyWorkspace -> Int
+workId = (+1) . fromEnum
+
+instance Show MyWorkspace where
+  show = show . workId
+
+allWorkspaces :: [MyWorkspace]
+allWorkspaces = (enumFromTo Messages Free2)
+
 myWorkspaces :: [WorkspaceId]
-myWorkspaces = map show [1..9]
+myWorkspaces = map show allWorkspaces
 
 -- FIXME: https://www.reddit.com/r/xmonad/comments/3vkrc3/does_this_layout_exist_if_not_can_anyone_suggest/
 
@@ -209,8 +230,6 @@ myStartupHook = do
   setWMName "LG3D"
   setDefaultCursor xC_left_ptr
   return ()
---  checkKeymap myConfig (myKeymap undefined)
---  return ()
 
 -- | The 'ManageHook' for my XMonad configuration
 myManageHook :: ManageHook
@@ -218,12 +237,15 @@ myManageHook = composeAll
   [ isDialog --> doCenterFloat   -- Float dialog boxes
   , manageDocks                  -- Avoid struts (e.g.: a panel)
   , isFullscreen --> doFullFloat -- Fixes fullscreen windows
-  , foldMap (uncurry applyProp) specialWindows
+  , buildHooks [specialWindows, myApplicationGroups]
   ]
 
+buildHooks :: [M.Map X11Query ManageHook] -> ManageHook
+buildHooks = M.foldMapWithKey applyProp . mconcat
+
 -- | This is a list of programs where XMonad's default behavior is not ideal.
-specialWindows :: [(X11Query, ManageHook)]
-specialWindows =
+specialWindows :: M.Map X11Query ManageHook
+specialWindows = M.fromList
   [ (QClassName "7zFM",                                  doCenterFloat)
   , (QClassName "Arandr",                                doCenterFloat)
   , (QClassName "Avahi-discover",                        doCenterFloat)
@@ -259,42 +281,26 @@ specialWindows =
   , (QAppName   "Policy Tool",                           doFloat)
   ]
 
+myApplicationGroups :: M.Map X11Query ManageHook
+myApplicationGroups =
+  foldMap (uncurry (\ws -> foldMap (flip M.singleton (viewShift (show ws))))) groups
+  where
+    viewShift = doF . liftM2 (.) W.greedyView W.shift
+
+    groups =
+      [ (Messages, QAppName <$>
+          [ "Pidgin", "Messenger", "Telegram", "Telegram Desktop"])
+      , (Web1, QClassName <$>
+         [ "google-chrome", "firefox" ])
+      , (Code, QClassName <$>
+         [ "emacs", "konsole", "xterm", "gnome-terminal" ])
+      , (Pdf, QClassName <$>
+         ["evince"])
+      ]
 
 --------------------------------------------------------------------------------
 ----------------------------------- Utility ------------------------------------
 --------------------------------------------------------------------------------
-
--- type Quasi a = (Data a, Typeable a)
---
--- -- | Quasiquoter for keyboard combinations
--- keysQ :: QuasiQuoter
--- keysQ = QuasiQuoter { quoteExp = qqKeysE, quotePat = qqKeysP }
---
--- qqKeysE :: String -> Q Exp
--- qqKeysE s = getPosition >>= keyParse s >>= dataToExpQ (const Nothing)
---
--- qqKeysP :: String -> Q Pat
--- qqKeysP s = getPosition >>= keyParse s >>= dataToPatQ defaultQP
---
--- defaultQP :: Quasi a => a -> Maybe (Q Pat)
--- defaultQP = const Nothing
---
--- getPosition = fmap transPos location where
---   transPos loc = (loc_filename loc,
---                   fst (loc_start loc),
---                   snd (loc_start loc))
---
--- keyParse :: Quasi a => String -> (String, Int, Int) -> Q [(String, a)]
--- keyParse str pos = undefined
---
--- data KeyMask = KMShift
---              | KMAlt
---              | KMCtrl
---              | KMSuper
---              deriving (Eq, Ord, Enum, Read, Show, Data)
---
--- keyComboParser :: a
--- keyComboParser = undefined
 
 -- | An X11 query.
 --   Find the data for creating an 'X11Query' with the @xprop@ command.
@@ -307,12 +313,7 @@ data X11Query = QTitle     String        -- ^ The X11 window title
               | QAppName   String        -- ^ The X11 application name
               | QClassName String        -- ^ The X11 class name
               | QArbitrary String String -- ^ An arbitrary X property
-              deriving (Eq, Show, Read)
-
--- | Declare that windows that match a given 'X11Query'
---   should execute the given 'ManageHook'.
-applyProp :: X11Query -> ManageHook -> Query (Endo WindowSet)
-applyProp q mh = queryX11 q --> mh
+              deriving (Eq, Show, Read, Ord)
 
 -- | Translate an 'X11Query' to the corresponding 'Query Bool'.
 queryX11 :: X11Query -> Query Bool
@@ -321,6 +322,25 @@ queryX11 (QAppName     s) = appName          =? s
 queryX11 (QClassName   s) = className        =? s
 queryX11 (QArbitrary p s) = stringProperty p =? s
 
+-- | Declare that windows that match a given 'X11Query'
+--   should execute the given 'ManageHook'.
+applyProp :: X11Query -> ManageHook -> Query (Endo WindowSet)
+applyProp q mh = queryX11 q --> mh
+
+
+-- https://www.nepherte.be/blog/step-by-step-configuration-of-xmonad.html
+-- -- Define the workspace an application has to go to
+-- myManageHook = composeAll . concat $
+--     [
+--           -- Applications that go to web
+--         [ className =? b --> viewShift "web"      | b <- myClassWebShifts  ]
+--          -- Applications that go to chat
+--       , [ appName  =? c --> doF (W.shift "chat") | c <- myClassChatShifts ]
+--     ]
+--     where
+--         viewShift = doF . liftM2 (.) W.greedyView W.shift
+--         myClassWebShifts  = ["Firefox"]
+--         myClassChatShifts = ["Pidgin" ]
 
 --------------------------------------------------------------------------------
 -------------------------------- Documentation ---------------------------------
