@@ -108,13 +108,14 @@ myKeymap cfg =
   , ("M4-S-q",          logoutCmd)
   , ("M4-w",            viewMonitor 1)
   , ("M4-e",            viewMonitor 2)
-  , ("M4-r",            viewMonitor 3)
+--  , ("M4-r",            viewMonitor 3)
   , ("M4-S-w",          moveToMonitor 1)
   , ("M4-S-e",          moveToMonitor 2)
-  , ("M4-S-r",          moveToMonitor 3)
+--  , ("M4-S-r",          moveToMonitor 3)
   , ("M1-M4-b",         toggleStruts)
+  , ("C-M4-r",          dmenuCmd)
   , ("M4-z",            dmenuCmd)
-  , ("M1-M4-z",         dmenuCmd)
+--  , ("M1-M4-z",         dmenuCmd)
   , ("M1-M4-e",         spawn "emacs")
   , ("M1-M4-f",         spawn "firefox")
   , ("M1-M4-p",         spawn "pavucontrol")
@@ -127,39 +128,45 @@ myKeymap cfg =
   (((mappend "M4-S-" . show) &&& moveToWS) <$> allWorkspaces)
 
   where
-    startTerminal   = spawn $ XMonad.terminal cfg
+    startTerminal   = spawn (XMonad.terminal cfg)
+    dmenuCmd        = spawn "dmenu_run -fn 'Droid Sans Mono-20'"
+    logoutCmd       = spawn "xfce4-session-logout"
+    restartXMonad   = spawn $ unwords
+      [ "if type xmonad; then"
+      , "xmonad --recompile && xmonad --restart;"
+      , "else"
+      , "xmessage xmonad not in PATH: \"$PATH\";"
+      , "fi"
+      ]
+
     closeFocused    = kill
     nextLayout      = sendMessage NextLayout
-    resetLayout     = setLayout $ XMonad.layoutHook cfg
+    resetLayout     = setLayout (XMonad.layoutHook cfg)
+
     focusDown       = windows W.focusDown
     focusUp         = windows W.focusUp
     focusMaster     = windows W.focusMaster
     swapMaster      = windows W.swapMaster
     swapDown        = windows W.swapDown
     swapUp          = windows W.swapUp
+
     shrinkMaster    = sendMessage Shrink
     expandMaster    = sendMessage Expand
-    incrementMaster = sendMessage $ IncMasterN 1
-    decrementMaster = sendMessage $ IncMasterN (-1)
+    incrementMaster = sendMessage (IncMasterN 1)
+    decrementMaster = sendMessage (IncMasterN (-1))
     toggleStruts    = sendMessage ToggleStruts
     shrinkTile      = sendMessage MirrorShrink
     expandTile      = sendMessage MirrorExpand
-    retileWindow    = withFocused $ windows . W.sink
+    retileWindow    = withFocused (windows . W.sink)
+
     doWorkspace f i = windows . f $ XMonad.workspaces cfg !! (i - 1)
     doMonitor   f i = screenWorkspace i >>= flip whenJust (windows . f)
+
     viewWS          = doWorkspace W.greedyView . workId
-    moveToWS        = doWorkspace W.shift . workId
-    viewMonitor     = doMonitor W.view
-    moveToMonitor   = doMonitor W.shift
-    logoutCmd       = spawn "xfce4-session-logout"
-    restartXMonad   =
-      spawn $ unwords [ "if type xmonad; then"
-                      , "xmonad --recompile && xmonad --restart;"
-                      , "else"
-                      , "xmessage xmonad not in PATH: \"$PATH\";"
-                      , "fi"
-                      ]
-    dmenuCmd        = spawn "yeganesh -x | bash"
+    moveToWS        = doWorkspace W.shift      . workId
+    viewMonitor     = doMonitor   W.view
+    moveToMonitor   = doMonitor   W.shift
+
 
 -- | Mouse bindings
 -- > buttons: 1 = left, 2 = middle, 3 = right, 4 = scroll down, 5 = scroll up
