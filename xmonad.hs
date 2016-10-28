@@ -16,12 +16,14 @@ import           Control.Concurrent          (forkIO, threadDelay)
 import           System.IO                   (hFlush, stdout)
 
 import           XMonad
+import           XMonad.Actions.CycleWS
 import           XMonad.Actions.FloatSnap
 import           XMonad.Config.Xfce
 import           XMonad.Hooks.EwmhDesktops
 import           XMonad.Hooks.ManageDocks
 import           XMonad.Hooks.ManageHelpers
 import           XMonad.Hooks.SetWMName
+import           XMonad.ManageHook
 import qualified XMonad.Layout.Fullscreen    as F
 import           XMonad.Layout.NoBorders
 import           XMonad.Layout.ResizableTile
@@ -87,6 +89,8 @@ myKeymap cfg =
   , ("M4-S-c",          closeFocused)
   , ("M4-<Space>",      nextLayout)
   , ("M4-S-<Space>",    resetLayout)
+  , ("M4-S-<Left>",     prevWS)
+  , ("M4-S-<Right>",    nextWS)
   , ("M4-n",            refresh)
   , ("M4-<Tab>",        focusDown)
   , ("M4-S-<Tab>",      focusUp)
@@ -236,7 +240,7 @@ myManageHook = composeAll
   [ isDialog --> doCenterFloat   -- Float dialog boxes
   , manageDocks                  -- Avoid struts (e.g.: a panel)
   , isFullscreen --> doFullFloat -- Fixes fullscreen windows
-  , buildHooks [specialWindows, myApplicationGroups]
+  , buildHooks [myApplicationGroups, specialWindows]
   ]
 
 buildHooks :: [M.Map X11Query ManageHook] -> ManageHook
