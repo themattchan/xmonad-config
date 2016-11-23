@@ -95,8 +95,8 @@ toggleTouchpad = sh $ do
               (grep (has (text "Device Enabled")) $
                run "xinput" ["list-props", tshow devId])
 
-  let flag = if devState == 1 then "--disable" else "--enable"
-  run "xinput" [flag, tshow devId]
+  let toggle = if devState == 1 then "--disable" else "--enable"
+  run "xinput" [toggle, tshow devId]
   return ()
 
 -- | Separated from myKeymap so we can do a validity check at startup
