@@ -4,6 +4,7 @@
 
 Find the values of M1 through M4 with xmodmap -pm
 
+```
 >  shift    Shift_L (0x32), Shift_R (0x3e)
 >  lock
 >  control  Control_L (0x25), Control_L (0x42), Control_R (0x69)
@@ -12,9 +13,11 @@ Find the values of M1 through M4 with xmodmap -pm
 >  mod3
 >  mod4     Super_L (0x85), Super_R (0x86), Super_L (0xce), Hyper_L (0xcf)
 >  mod5     ISO_Level3_Shift (0x5c), Mode_switch (0xcb)
+```
 
 ### Key symbols
 
+```
 > <Backspace>
 > <Tab>
 > <Return>
@@ -188,11 +191,14 @@ Find the values of M1 through M4 with xmodmap -pm
 > <XF86_ClearGrab>
 > <XF86_Next_VMode>
 > <XF86_Prev_VMode>
+```
 
 ### Mouse symbols
 
+```
 > button1 = left mouse button
 > button2 = middle mouse button
 > button3 = right mouse button
 > button4 = scroll down
 > button5 = scroll up
+```
