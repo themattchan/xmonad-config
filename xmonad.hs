@@ -34,7 +34,7 @@ import           XMonad.Util.Cursor
 import           XMonad.Util.EZConfig
 
 
-import Turtle
+import Turtle hiding (stdout, (<<))
 
 --------------------------------------------------------------------------------
 ----------------------------------- Commands -----------------------------------
@@ -76,8 +76,8 @@ myNormalBorderColor, myFocusedBorderColor :: String
 myNormalBorderColor  = "#7c7c7c"
 myFocusedBorderColor = "#ffb6b0"
 
-xF86XK_TouchpadToggle :: KeySym
-xF86XK_TouchpadToggle = 0x1008ffa9
+-- xF86XK_TouchpadToggle :: KeySym
+-- xF86XK_TouchpadToggle = 0x1008ffa9
 
 run :: Text -> [Text] -> Shell Text
 run prog args = inproc prog args (pure "")
@@ -85,19 +85,21 @@ run prog args = inproc prog args (pure "")
 tshow :: Show a => a -> T.Text
 tshow = T.pack . show
 
-toggleTouchpad :: IO ()
-toggleTouchpad = sh $ do
+xsh :: Shell a -> X ()
+xsh = void . xfork . sh
+
+toggleTouchpad :: Shell ()
+toggleTouchpad = do
   devId:_ <- match (has (text "id=" *> decimal)) <$>
              (grep (has (text "Touchpad")) $
                run "xinput" ["--list"])
 
   devState:_ <- match (suffix decimal) <$>
-              (grep (has (text "Device Enabled")) $
-               run "xinput" ["list-props", tshow devId])
+                (grep (has (text "Device Enabled")) $
+                  run "xinput" ["list-props", tshow devId])
 
   let toggle = if devState == 1 then "--disable" else "--enable"
-  run "xinput" [toggle, tshow devId]
-  return ()
+  void $ run "xinput" [toggle, tshow devId]
 
 -- | Separated from myKeymap so we can do a validity check at startup
 myKeys :: XConfig Layout -> M.Map (KeyMask, KeySym) (X ())
@@ -148,6 +150,7 @@ myKeymap cfg =
   , ("M1-M4-p",         spawn "pavucontrol")
   , ("M4--",            shrinkTile)
   , ("M4-=",            expandTile)
+  , ("<XF86TouchpadToggle>", xsh toggleTouchpad)
   ]
   <>
   (((mappend "M4-" . show) &&& viewWS) <$> allWorkspaces)
