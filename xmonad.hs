@@ -4,13 +4,15 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE LiberalTypeSynonyms   #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
 
-import           Control.Arrow ((&&&))
+import           Control.Arrow ((&&&), (>>>))
 import           Control.Applicative
 import           Control.Monad
 import           Data.Foldable
 import qualified Data.Map                    as M
 import           Data.Monoid
+import qualified Data.Text as T
 
 import           Control.Concurrent          (forkIO, threadDelay)
 import           System.IO                   (hFlush, stdout)
@@ -31,6 +33,8 @@ import qualified XMonad.StackSet             as W
 import           XMonad.Util.Cursor
 import           XMonad.Util.EZConfig
 
+
+import Turtle
 
 --------------------------------------------------------------------------------
 ----------------------------------- Commands -----------------------------------
@@ -71,6 +75,29 @@ myConfig = xfceConfig
 myNormalBorderColor, myFocusedBorderColor :: String
 myNormalBorderColor  = "#7c7c7c"
 myFocusedBorderColor = "#ffb6b0"
+
+xF86XK_TouchpadToggle :: KeySym
+xF86XK_TouchpadToggle = 0x1008ffa9
+
+run :: Text -> [Text] -> Shell Text
+run prog args = inproc prog args (pure "")
+
+tshow :: Show a => a -> T.Text
+tshow = T.pack . show
+
+toggleTouchpad :: IO ()
+toggleTouchpad = sh $ do
+  devId:_ <- match (has (text "id=" *> decimal)) <$>
+             (grep (has (text "Touchpad")) $
+               run "xinput" ["--list"])
+
+  devState:_ <- match (suffix decimal) <$>
+              (grep (has (text "Device Enabled")) $
+               run "xinput" ["list-props", tshow devId])
+
+  let flag = if devState == 1 then "--disable" else "--enable"
+  run "xinput" [flag, tshow devId]
+  return ()
 
 -- | Separated from myKeymap so we can do a validity check at startup
 myKeys :: XConfig Layout -> M.Map (KeyMask, KeySym) (X ())
