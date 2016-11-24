@@ -90,13 +90,13 @@ xsh = void . xfork . sh
 
 toggleTouchpad :: Shell ()
 toggleTouchpad = do
-  devId:_ <- match (has (text "id=" *> decimal)) <$>
-             (grep (has (text "Touchpad")) $
-               run "xinput" ["--list"])
+  devId:_    <- match (has (text "id=" *> decimal)) <$>
+                grep (has (text "Touchpad")) $
+                run "xinput" ["--list"]
 
   devState:_ <- match (suffix decimal) <$>
-                (grep (has (text "Device Enabled")) $
-                  run "xinput" ["list-props", tshow devId])
+                grep (has (text "Device Enabled")) $
+                run "xinput" ["list-props", tshow devId]
 
   let toggle = if devState == 1 then "--disable" else "--enable"
   void $ run "xinput" [toggle, tshow devId]
