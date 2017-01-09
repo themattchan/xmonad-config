@@ -90,13 +90,13 @@ xsh = void . xfork . sh
 
 toggleTouchpad :: Shell ()
 toggleTouchpad = do
-  devId:_    <- match (has (text "id=" *> decimal)) <$>
-                grep (has (text "Touchpad")) $
-                run "xinput" ["--list"]
+  devId:_    <- fmap (match (has (text "id=" *> decimal)))
+                . grep (has (text "Touchpad"))
+                $ run "xinput" ["--list"]
 
-  devState:_ <- match (suffix decimal) <$>
-                grep (has (text "Device Enabled")) $
-                run "xinput" ["list-props", tshow devId]
+  devState:_ <- fmap (match (suffix decimal))
+                . grep (has (text "Device Enabled"))
+                $ run "xinput" ["list-props", tshow devId]
 
   let toggle = if devState == 1 then "--disable" else "--enable"
   void $ run "xinput" [toggle, tshow devId]
@@ -104,6 +104,7 @@ toggleTouchpad = do
 -- | Separated from myKeymap so we can do a validity check at startup
 myKeys :: XConfig Layout -> M.Map (KeyMask, KeySym) (X ())
 myKeys cfg = mkKeymap cfg (myKeymap cfg)
+
 
 -- | Key bindings
 --   Quick guide: C = control
@@ -147,10 +148,10 @@ myKeymap cfg =
 --  , ("M1-M4-z",         dmenuCmd)
   , ("M1-M4-e",         spawn "emacs")
   , ("M1-M4-f",         spawn "firefox")
-  , ("M1-M4-p",         spawn "pavucontrol")
+  , ("M1-M4-p",         spawn "control")
   , ("M4--",            shrinkTile)
   , ("M4-=",            expandTile)
-  , ("<XF86TouchpadToggle>", xsh toggleTouchpad)
+  , ("M4-<f5>",         xsh toggleTouchpad)
   ]
   <>
   (((mappend "M4-" . show) &&& viewWS) <$> allWorkspaces)
@@ -160,7 +161,8 @@ myKeymap cfg =
   where
     startTerminal   = spawn (XMonad.terminal cfg)
     dmenuCmd        = spawn "dmenu_run -fn 'Droid Sans Mono-20'"
-    logoutCmd       = spawn "xfce4-session-logout"
+    logoutCmd
+      = spawn "xfce4-session-logout"
     restartXMonad   = spawn $ unwords
       [ "if type xmonad; then"
       , "xmonad --recompile && xmonad --restart;"
@@ -323,7 +325,7 @@ specialWindows = M.fromList
 
 myApplicationGroups :: M.Map X11Query ManageHook
 myApplicationGroups =
-  foldMap (uncurry (\ws -> foldMap (flip M.singleton (viewShift (show ws))))) groups
+  foldMap (uncurry (foldMap . flip M.singleton . viewShift . show )) groups
   where
     viewShift = doF . liftM2 (.) W.greedyView W.shift
 
