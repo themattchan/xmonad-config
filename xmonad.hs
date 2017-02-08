@@ -20,6 +20,7 @@ import           System.IO                   (hFlush, stdout)
 import           XMonad
 import           XMonad.Actions.CycleWS
 import           XMonad.Actions.FloatSnap
+import           XMonad.Config.Kde
 import           XMonad.Config.Xfce
 import           XMonad.Hooks.EwmhDesktops
 import           XMonad.Hooks.ManageDocks
@@ -34,7 +35,7 @@ import           XMonad.Util.Cursor
 import           XMonad.Util.EZConfig
 
 
-import Turtle hiding (stdout, (<<))
+-- import Turtle hiding (stdout, (<<))
 
 --------------------------------------------------------------------------------
 ----------------------------------- Commands -----------------------------------
@@ -42,7 +43,9 @@ import Turtle hiding (stdout, (<<))
 
 -- | Launch XMonad
 main :: IO ()
-main = restartXfcePanel >> xmonad (ewmh myConfig)
+main = do
+--  restartXfcePanel
+  xmonad (ewmh myConfig)
 
 restartXfcePanel :: IO ()
 restartXfcePanel = void $ forkIO $ do
@@ -54,7 +57,7 @@ restartXfcePanel = void $ forkIO $ do
   spawn "xfce4-panel -r"
   putStrLn "[DONE]"
 
-myConfig = xfceConfig
+myConfig = kdeConfig --xfceConfig
   { borderWidth        = 2
   , normalBorderColor  = myNormalBorderColor
   , focusedBorderColor = myFocusedBorderColor
@@ -69,7 +72,7 @@ myConfig = xfceConfig
   , logHook            = myLogHook
   , startupHook        = myStartupHook
   , handleEventHook    = myHandleEventHook
-  , manageHook         = myManageHook
+  , manageHook         = manageHook kdeConfig <+> myManageHook
   }
 
 myNormalBorderColor, myFocusedBorderColor :: String
@@ -79,6 +82,7 @@ myFocusedBorderColor = "#ffb6b0"
 -- xF86XK_TouchpadToggle :: KeySym
 -- xF86XK_TouchpadToggle = 0x1008ffa9
 
+{-
 run :: Text -> [Text] -> Shell Text
 run prog args = inproc prog args (pure "")
 
@@ -100,6 +104,7 @@ toggleTouchpad = do
 
   let toggle = if devState == 1 then "--disable" else "--enable"
   void $ run "xinput" [toggle, tshow devId]
+-}
 
 -- | Separated from myKeymap so we can do a validity check at startup
 myKeys :: XConfig Layout -> M.Map (KeyMask, KeySym) (X ())
@@ -151,7 +156,7 @@ myKeymap cfg =
   , ("M1-M4-p",         spawn "control")
   , ("M4--",            shrinkTile)
   , ("M4-=",            expandTile)
-  , ("M4-<f5>",         xsh toggleTouchpad)
+--  , ("M4-<f5>",         xsh toggleTouchpad)
   ]
   <>
   (((mappend "M4-" . show) &&& viewWS) <$> allWorkspaces)
