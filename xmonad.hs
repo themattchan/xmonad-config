@@ -57,7 +57,7 @@ restartXfcePanel = void $ forkIO $ do
   spawn "xfce4-panel -r"
   putStrLn "[DONE]"
 
-myConfig = kdeConfig --xfceConfig
+myConfig = kde4Config --xfceConfig
   { borderWidth        = 2
   , normalBorderColor  = myNormalBorderColor
   , focusedBorderColor = myFocusedBorderColor
@@ -72,7 +72,7 @@ myConfig = kdeConfig --xfceConfig
   , logHook            = myLogHook
   , startupHook        = myStartupHook
   , handleEventHook    = myHandleEventHook
-  , manageHook         = manageHook kdeConfig <+> myManageHook
+  , manageHook         = manageHook kde4Config <+> myManageHook
   }
 
 myNormalBorderColor, myFocusedBorderColor :: String
