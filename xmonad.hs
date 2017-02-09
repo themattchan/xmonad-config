@@ -34,7 +34,7 @@ import           XMonad.Util.Cursor
 import           XMonad.Util.EZConfig
 
 
-import Turtle hiding (stdout, (<<))
+-- import Turtle hiding (stdout, (<<))
 
 --------------------------------------------------------------------------------
 ----------------------------------- Commands -----------------------------------
@@ -58,7 +58,7 @@ myConfig = xfceConfig
   { borderWidth        = 2
   , normalBorderColor  = myNormalBorderColor
   , focusedBorderColor = myFocusedBorderColor
-  , terminal           = "konsole"
+  , terminal           = "xfce4-terminal"
   , focusFollowsMouse  = True
   , clickJustFocuses   = True
   , modMask            = mod4Mask
@@ -79,6 +79,7 @@ myFocusedBorderColor = "#ffb6b0"
 -- xF86XK_TouchpadToggle :: KeySym
 -- xF86XK_TouchpadToggle = 0x1008ffa9
 
+{-
 run :: Text -> [Text] -> Shell Text
 run prog args = inproc prog args (pure "")
 
@@ -100,6 +101,7 @@ toggleTouchpad = do
 
   let toggle = if devState == 1 then "--disable" else "--enable"
   void $ run "xinput" [toggle, tshow devId]
+-}
 
 -- | Separated from myKeymap so we can do a validity check at startup
 myKeys :: XConfig Layout -> M.Map (KeyMask, KeySym) (X ())
@@ -151,7 +153,7 @@ myKeymap cfg =
   , ("M1-M4-p",         spawn "control")
   , ("M4--",            shrinkTile)
   , ("M4-=",            expandTile)
-  , ("M4-<f5>",         xsh toggleTouchpad)
+--  , ("M4-<f5>",         xsh toggleTouchpad)
   ]
   <>
   (((mappend "M4-" . show) &&& viewWS) <$> allWorkspaces)
