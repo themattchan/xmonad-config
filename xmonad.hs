@@ -229,9 +229,9 @@ data MyWorkspace
   | Code
   | Pdf
   | Term
-  | Files
-  | Free1
-  | Free2
+  -- | Files
+  -- | Free1
+  -- | Free2
   deriving (Eq, Bounded, Enum, Ord)
 
 workId :: MyWorkspace -> Int
