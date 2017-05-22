@@ -1,7 +1,4 @@
-{-# LANGUAGE AutoDeriveTypeable    #-}
-{-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE LiberalTypeSynonyms   #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
@@ -20,17 +17,23 @@ import           System.IO                   (hFlush, stdout)
 import           XMonad
 import           XMonad.Actions.CycleWS
 import           XMonad.Actions.FloatSnap
+
+-- configs and hooks
 import           XMonad.Config.Kde
 import           XMonad.Config.Xfce
+import           XMonad.Hooks.DynamicLog
 import           XMonad.Hooks.EwmhDesktops
 import           XMonad.Hooks.ManageDocks
 import           XMonad.Hooks.ManageHelpers
 import           XMonad.Hooks.SetWMName
 import           XMonad.ManageHook
+
 import qualified XMonad.Layout.Fullscreen    as F
 import           XMonad.Layout.NoBorders
+import           XMonad.Layout.LayoutModifier
 import           XMonad.Layout.ResizableTile
 import qualified XMonad.StackSet             as W
+import           XMonad.Util.Run (spawnPipe)
 import           XMonad.Util.Cursor
 import           XMonad.Util.EZConfig
 
@@ -42,10 +45,16 @@ import           XMonad.Util.EZConfig
 --------------------------------------------------------------------------------
 
 -- | Launch XMonad
-main :: IO ()
-main = do
---  restartXfcePanel
-  xmonad (ewmh myConfig)
+main = xmonadXfce
+
+configured = xmonad . ewmh . myConfig
+
+xmonadVanilla = do
+  xmproc <- spawnPipe "xmobar ~/.xmonad/xmobar.hs"
+  configured defaultConfig
+
+xmonadXfce = restartXfcePanel >> configured xfceConfig
+xmonadKde  = configured kde4Config
 
 restartXfcePanel :: IO ()
 restartXfcePanel = void $ forkIO $ do
@@ -57,11 +66,11 @@ restartXfcePanel = void $ forkIO $ do
   spawn "xfce4-panel -r"
   putStrLn "[DONE]"
 
-myConfig = kde4Config --xfceConfig
+myConfig baseCfg = baseCfg
   { borderWidth        = 2
   , normalBorderColor  = myNormalBorderColor
   , focusedBorderColor = myFocusedBorderColor
-  , terminal           = "konsole"
+  , terminal           = myTerminal
   , focusFollowsMouse  = True
   , clickJustFocuses   = True
   , modMask            = mod4Mask
@@ -72,13 +81,14 @@ myConfig = kde4Config --xfceConfig
   , logHook            = myLogHook
   , startupHook        = myStartupHook
   , handleEventHook    = myHandleEventHook
-  , manageHook         = manageHook kde4Config <+> myManageHook
+  , manageHook         = manageHook baseCfg <+> myManageHook
   }
 
 myNormalBorderColor, myFocusedBorderColor :: String
 myNormalBorderColor  = "#7c7c7c"
 myFocusedBorderColor = "#ffb6b0"
 
+myTerminal = "konsole"
 -- xF86XK_TouchpadToggle :: KeySym
 -- xF86XK_TouchpadToggle = 0x1008ffa9
 
@@ -249,7 +259,7 @@ myWorkspaces = map show allWorkspaces
 -- FIXME: https://www.reddit.com/r/xmonad/comments/3vkrc3/does_this_layout_exist_if_not_can_anyone_suggest/
 
 -- | My window layouts
-myLayout = modifyL unmodified
+myLayout = avoidStruts $ modifyL unmodified
   where
     unmodified = tiled ||| Mirror tiled ||| Full
     -- default tiling algorithm partitions the screen into two panes
@@ -277,6 +287,28 @@ myStartupHook = do
   setWMName "LG3D"
   setDefaultCursor xC_left_ptr
   return ()
+
+--------------------------------------------------------------------------------
+-- * XMobar
+
+myXmobar :: LayoutClass l Window => XConfig l -> IO (XConfig (ModifiedLayout AvoidStruts l))
+myXmobar = statusBar "xmobar" myPP toggleStrutsKey 
+  where
+    toggleStrutsKey XConfig{modMask = modm} = (modm, xK_b)
+
+myPP = xmobarPP
+  { ppCurrent		= xmobarColor "#cc342b" ""
+  , ppHidden		= xmobarColor "#373b41" ""
+  , ppHiddenNoWindows	= xmobarColor "#c5c8c6" ""
+  , ppUrgent		= xmobarColor "#198844" ""
+  , ppLayout		= xmobarColor "#c5c8c6" ""
+  , ppTitle		= xmobarColor "#373b41" "" . shorten 80
+  , ppSep		= xmobarColor "#c5c8c6" "" "  "
+  }
+
+
+--------------------------------------------------------------------------------
+-- * Manage Hooks
 
 -- | The 'ManageHook' for my XMonad configuration
 myManageHook :: ManageHook
