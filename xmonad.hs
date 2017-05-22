@@ -46,11 +46,16 @@ import           XMonad.Util.EZConfig
 
 -- | Launch XMonad
 main :: IO ()
-main = do
-  xmproc <- spawnPipe "xmobar ~/.xmonad/xmobar.hs"
-  xmonad . ewmh . myConfig $ defaultConfig
+main = xmonadXfce
 
-xmonadXfce = restartXfcePanel >> xmonad (ewmh (myConfig xfceConfig))
+configured = xmonad . ewmh . myConfig
+
+xmonadVanilla = do
+  xmproc <- spawnPipe "xmobar ~/.xmonad/xmobar.hs"
+  configured defaultConfig
+
+xmonadXfce = restartXfcePanel >> configured xfceConfig
+xmonadKde  = configured kde4Config
 
 restartXfcePanel :: IO ()
 restartXfcePanel = void $ forkIO $ do
