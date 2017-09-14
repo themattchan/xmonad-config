@@ -47,8 +47,9 @@ import           XMonad.Util.EZConfig
 -- | Launch XMonad
 main :: IO ()
 main = do
-  xmproc <- spawnPipe "xmobar ~/.xmonad/xmobar.hs"
-  xmonad . ewmh . myConfig $ defaultConfig
+  xmonadXfce
+--  xmproc <- spawnPipe "xmobar ~/.xmonad/xmobar.hs"
+--  xmonad . ewmh . myConfig $ defaultConfig
 
 xmonadXfce = restartXfcePanel >> xmonad (ewmh (myConfig xfceConfig))
 
@@ -62,7 +63,7 @@ restartXfcePanel = void $ forkIO $ do
   spawn "xfce4-panel -r"
   putStrLn "[DONE]"
 
-myConfig baseCfg = baseCfg
+myConfig baseCfg = docks $ baseCfg
   { borderWidth        = 2
   , normalBorderColor  = myNormalBorderColor
   , focusedBorderColor = myFocusedBorderColor
@@ -288,18 +289,18 @@ myStartupHook = do
 -- * XMobar
 
 myXmobar :: LayoutClass l Window => XConfig l -> IO (XConfig (ModifiedLayout AvoidStruts l))
-myXmobar = statusBar "xmobar" myPP toggleStrutsKey 
+myXmobar = statusBar "xmobar" myPP toggleStrutsKey
   where
     toggleStrutsKey XConfig{modMask = modm} = (modm, xK_b)
 
 myPP = xmobarPP
-  { ppCurrent		= xmobarColor "#cc342b" ""
-  , ppHidden		= xmobarColor "#373b41" ""
-  , ppHiddenNoWindows	= xmobarColor "#c5c8c6" ""
-  , ppUrgent		= xmobarColor "#198844" ""
-  , ppLayout		= xmobarColor "#c5c8c6" ""
-  , ppTitle		= xmobarColor "#373b41" "" . shorten 80
-  , ppSep		= xmobarColor "#c5c8c6" "" "  "
+  { ppCurrent       = xmobarColor "#cc342b" ""
+  , ppHidden        = xmobarColor "#373b41" ""
+  , ppHiddenNoWindows   = xmobarColor "#c5c8c6" ""
+  , ppUrgent        = xmobarColor "#198844" ""
+  , ppLayout        = xmobarColor "#c5c8c6" ""
+  , ppTitle     = xmobarColor "#373b41" "" . shorten 80
+  , ppSep       = xmobarColor "#c5c8c6" "" "  "
   }
 
 
