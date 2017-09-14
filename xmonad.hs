@@ -48,7 +48,7 @@ import           XMonad.Util.EZConfig
 main :: IO ()
 main = xmonadXfce
 
-configured = xmonad . ewmh . myConfig
+configured = xmonad . ewmh . docks . myConfig
 
 xmonadVanilla = do
   xmproc <- spawnPipe "xmobar ~/.xmonad/xmobar.hs"
