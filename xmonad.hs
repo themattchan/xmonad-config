@@ -9,7 +9,7 @@ import           Control.Monad
 import           Data.Foldable
 import qualified Data.Map                    as M
 import           Data.Monoid
-import qualified Data.Text as T
+--import qualified Data.Text as T
 
 import           Control.Concurrent          (forkIO, threadDelay)
 import           System.IO                   (hFlush, stdout)
@@ -17,6 +17,7 @@ import           System.IO                   (hFlush, stdout)
 import           XMonad
 import           XMonad.Actions.CycleWS
 import           XMonad.Actions.FloatSnap
+import           XMonad.Actions.SinkAll
 
 -- configs and hooks
 import           XMonad.Config.Kde
@@ -89,7 +90,7 @@ myNormalBorderColor, myFocusedBorderColor :: String
 myNormalBorderColor  = "#7c7c7c"
 myFocusedBorderColor = "#ffb6b0"
 
-myTerminal = "konsole"
+myTerminal = "xfce-terminal"
 -- xF86XK_TouchpadToggle :: KeySym
 -- xF86XK_TouchpadToggle = 0x1008ffa9
 
@@ -97,8 +98,8 @@ myTerminal = "konsole"
 run :: Text -> [Text] -> Shell Text
 run prog args = inproc prog args (pure "")
 
-tshow :: Show a => a -> T.Text
-tshow = T.pack . show
+--tshow :: Show a => a -> T.Text
+--tshow = T.pack . show
 
 xsh :: Shell a -> X ()
 xsh = void . xfork . sh
@@ -137,6 +138,7 @@ myKeymap cfg =
   , ("M4-S-<Space>",    resetLayout)
   , ("M4-S-<Left>",     prevWS)
   , ("M4-S-<Right>",    nextWS)
+  , ("M4-S-f",          sinkAll)
   , ("M4-n",            refresh)
   , ("M4-<Tab>",        focusDown)
   , ("M4-S-<Tab>",      focusUp)
@@ -236,13 +238,13 @@ myMouse = const $ M.fromList
 data MyWorkspace
   = Messages
   | Web1
-  | Web2
+--  | Web2
   | Code
   | Pdf
   | Term
-  | Files
-  | Free1
-  | Free2
+--  | Files
+--  | Free1
+--  | Free2
   deriving (Eq, Bounded, Enum, Ord)
 
 workId :: MyWorkspace -> Int
@@ -293,18 +295,18 @@ myStartupHook = do
 -- * XMobar
 
 myXmobar :: LayoutClass l Window => XConfig l -> IO (XConfig (ModifiedLayout AvoidStruts l))
-myXmobar = statusBar "xmobar" myPP toggleStrutsKey 
+myXmobar = statusBar "xmobar" myPP toggleStrutsKey
   where
     toggleStrutsKey XConfig{modMask = modm} = (modm, xK_b)
 
 myPP = xmobarPP
-  { ppCurrent		= xmobarColor "#cc342b" ""
-  , ppHidden		= xmobarColor "#373b41" ""
-  , ppHiddenNoWindows	= xmobarColor "#c5c8c6" ""
-  , ppUrgent		= xmobarColor "#198844" ""
-  , ppLayout		= xmobarColor "#c5c8c6" ""
-  , ppTitle		= xmobarColor "#373b41" "" . shorten 80
-  , ppSep		= xmobarColor "#c5c8c6" "" "  "
+  { ppCurrent   = xmobarColor "#cc342b" ""
+  , ppHidden    = xmobarColor "#373b41" ""
+  , ppHiddenNoWindows = xmobarColor "#c5c8c6" ""
+  , ppUrgent    = xmobarColor "#198844" ""
+  , ppLayout    = xmobarColor "#c5c8c6" ""
+  , ppTitle   = xmobarColor "#373b41" "" . shorten 80
+  , ppSep   = xmobarColor "#c5c8c6" "" "  "
   }
 
 
@@ -373,7 +375,7 @@ myApplicationGroups =
       , (Web1, QClassName <$>
          [ "google-chrome", "firefox" ])
       , (Code, QClassName <$>
-         [ "emacs", "konsole", "xterm", "gnome-terminal" ])
+         [ "emacs", "konsole", "xterm", "gnome-terminal", "xfce-terminal" ])
       , (Pdf, QClassName <$>
          ["evince"])
       ]
