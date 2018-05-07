@@ -54,10 +54,9 @@ main = xmonadXfce
 configured = ewmh . docks . myConfig
 
 xmonadVanilla = do
-    cfg <- xmobar (configured defaultConfig)
---    trayer
-    xmonad cfg
-  where
+  cfg <- xmobar (configured defaultConfig)
+  xmonad cfg
+    --  where
     -- trayer = spawn $ unwords $
     --   [ "killall trayer && trayer"
     --   ,"--edge bottom"
@@ -309,7 +308,6 @@ myHandleEventHook = F.fullscreenEventHook
 -- | My startup hook
 myStartupHook :: X ()
 myStartupHook = do
-  setWMName "LG3D"
   setDefaultCursor xC_left_ptr
   return ()
 
