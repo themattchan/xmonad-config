@@ -49,14 +49,29 @@ import           XMonad.Util.EZConfig
 main :: IO ()
 main = xmonadXfce
 
-configured = xmonad . ewmh . docks . myConfig
+configured = ewmh . docks . myConfig
 
 xmonadVanilla = do
-  xmproc <- spawnPipe "xmobar ~/.xmonad/xmobar.hs"
-  configured defaultConfig
+    cfg <- xmobar (configured defaultConfig)
+--    trayer
+    xmonad cfg
+  where
+    trayer = spawn $ unwords $
+      [ "killall trayer && trayer"
+      ,"--edge bottom"
+      ,"--align right"
+      , "--SetDockType true"
+      , "--SetPartialStrut true"
+      ,"--expand true"
+      , "--width 15"
+      ,"--height 12"
+      , "--transparent true"
+      , "--tint 0x000000"
+      , "&"
+      ]
 
-xmonadXfce = restartXfcePanel >> configured xfceConfig
-xmonadKde  = configured kde4Config
+xmonadXfce = restartXfcePanel >> xmonad (configured xfceConfig)
+xmonadKde  = xmonad (configured kde4Config)
 
 restartXfcePanel :: IO ()
 restartXfcePanel = void $ forkIO $ do
@@ -90,7 +105,7 @@ myNormalBorderColor, myFocusedBorderColor :: String
 myNormalBorderColor  = "#7c7c7c"
 myFocusedBorderColor = "#ffb6b0"
 
-myTerminal = "xfce-terminal"
+myTerminal = "xfce4-terminal"
 -- xF86XK_TouchpadToggle :: KeySym
 -- xF86XK_TouchpadToggle = 0x1008ffa9
 
@@ -120,8 +135,7 @@ toggleTouchpad = do
 
 -- | Separated from myKeymap so we can do a validity check at startup
 myKeys :: XConfig Layout -> M.Map (KeyMask, KeySym) (X ())
-myKeys cfg = mkKeymap cfg (myKeymap cfg)
-
+myKeys = mkKeymap <*> myKeymap
 
 -- | Key bindings
 --   Quick guide: C = control
@@ -278,7 +292,7 @@ myLayout = avoidStruts $ modifyL unmodified
 
 -- | My event logging hook
 myLogHook :: X ()
-myLogHook = return ()
+myLogHook = return ()-- dynamicLogWithPP xmobarPP
 
 -- | My event handling hook
 myHandleEventHook :: Event -> X All
@@ -365,7 +379,7 @@ specialWindows = M.fromList
 
 myApplicationGroups :: M.Map X11Query ManageHook
 myApplicationGroups =
-  foldMap (uncurry (foldMap . flip M.singleton . viewShift . show )) groups
+    foldMap (uncurry (foldMap . flip M.singleton . viewShift . show)) groups
   where
     viewShift = doF . liftM2 (.) W.greedyView W.shift
 
