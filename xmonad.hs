@@ -33,6 +33,8 @@ import qualified XMonad.Layout.Fullscreen    as F
 import           XMonad.Layout.NoBorders
 import           XMonad.Layout.LayoutModifier
 import           XMonad.Layout.ResizableTile
+import           XMonad.Layout.BoringWindows
+import           XMonad.Layout.Minimize
 import qualified XMonad.StackSet             as W
 import           XMonad.Util.Run (spawnPipe)
 import           XMonad.Util.Cursor
@@ -56,19 +58,19 @@ xmonadVanilla = do
 --    trayer
     xmonad cfg
   where
-    trayer = spawn $ unwords $
-      [ "killall trayer && trayer"
-      ,"--edge bottom"
-      ,"--align right"
-      , "--SetDockType true"
-      , "--SetPartialStrut true"
-      ,"--expand true"
-      , "--width 15"
-      ,"--height 12"
-      , "--transparent true"
-      , "--tint 0x000000"
-      , "&"
-      ]
+    -- trayer = spawn $ unwords $
+    --   [ "killall trayer && trayer"
+    --   ,"--edge bottom"
+    --   ,"--align right"
+    --   , "--SetDockType true"
+    --   , "--SetPartialStrut true"
+    --   ,"--expand true"
+    --   , "--width 15"
+    --   ,"--height 12"
+    --   , "--transparent true"
+    --   , "--tint 0x000000"
+    --   , "&"
+    --   ]
 
 xmonadXfce = restartXfcePanel >> xmonad (configured xfceConfig)
 xmonadKde  = xmonad (configured kde4Config)
@@ -148,41 +150,54 @@ myKeymap :: XConfig Layout -> [(String, X ())]
 myKeymap cfg =
   [ ("M4-S-<Return>",   startTerminal)
   , ("M4-S-c",          closeFocused)
+
   , ("M4-<Space>",      nextLayout)
   , ("M4-S-<Space>",    resetLayout)
+
   , ("M4-S-<Left>",     prevWS)
   , ("M4-S-<Right>",    nextWS)
   , ("M4-S-f",          sinkAll)
-  , ("M4-n",            refresh)
-  , ("M4-<Tab>",        focusDown)
-  , ("M4-S-<Tab>",      focusUp)
-  , ("M4-j",            focusDown)
-  , ("M4-k",            focusUp)
-  , ("M4-<Return>",     swapMaster)
-  , ("M4-S-j",          swapDown)
-  , ("M4-S-k",          swapUp)
-  , ("M4-h",            shrinkMaster)
-  , ("M4-l",            expandMaster)
   , ("M4-t",            retileWindow)
+
+  , ("M4-n",            refresh)
+
+  , ("M4-<Tab>",        windows W.focusDown)
+  , ("M4-S-<Tab>",      windows W.focusUp)
+
+  , ("M4-j",            windows W.focusDown)
+  , ("M4-k",            windows W.focusUp)
+
+  , ("M4-<Return>",     windows W.swapMaster)
+  , ("M4-S-j",          windows W.swapDown)
+  , ("M4-S-k",          windows W.swapUp)
+
+  , ("C-M4-h",          shrinkMaster)
+  , ("C-M4-j",          shrinkTile)
+  , ("C-M4-k",          expandTile)
+  , ("C-M4-l",          expandMaster)
+
+  , ("M4-m",            withFocused minimizeWindow)
+  , ("M4-S-m",          sendMessage RestoreNextMinimizedWin)
+
   , ("M4-,",            incrementMaster)
   , ("M4-.",            decrementMaster)
   , ("M4-q",            restartXMonad)
   , ("M4-S-q",          logoutCmd)
+
   , ("M4-w",            viewMonitor 1)
   , ("M4-e",            viewMonitor 2)
 --  , ("M4-r",            viewMonitor 3)
+
   , ("M4-S-w",          moveToMonitor 1)
   , ("M4-S-e",          moveToMonitor 2)
 --  , ("M4-S-r",          moveToMonitor 3)
+
   , ("M1-M4-b",         toggleStruts)
   , ("C-M4-r",          dmenuCmd)
-  , ("M4-z",            dmenuCmd)
---  , ("M1-M4-z",         dmenuCmd)
+
   , ("M1-M4-e",         spawn "emacs")
   , ("M1-M4-f",         spawn "firefox")
   , ("M1-M4-p",         spawn "control")
-  , ("M4--",            shrinkTile)
-  , ("M4-=",            expandTile)
 --  , ("M4-<f5>",         xsh toggleTouchpad)
   ]
   <>
@@ -193,8 +208,7 @@ myKeymap cfg =
   where
     startTerminal   = spawn (XMonad.terminal cfg)
     dmenuCmd        = spawn "dmenu_run -fn 'Droid Sans Mono-20'"
-    logoutCmd
-      = spawn "xfce4-session-logout"
+    logoutCmd       = spawn "xfce4-session-logout"
     restartXMonad   = spawn $ unwords
       [ "if type xmonad; then"
       , "xmonad --recompile && xmonad --restart;"
@@ -207,24 +221,18 @@ myKeymap cfg =
     nextLayout      = sendMessage NextLayout
     resetLayout     = setLayout (XMonad.layoutHook cfg)
 
-    focusDown       = windows W.focusDown
-    focusUp         = windows W.focusUp
-    focusMaster     = windows W.focusMaster
-    swapMaster      = windows W.swapMaster
-    swapDown        = windows W.swapDown
-    swapUp          = windows W.swapUp
-
     shrinkMaster    = sendMessage Shrink
     expandMaster    = sendMessage Expand
+    shrinkTile      = sendMessage MirrorShrink
+    expandTile      = sendMessage MirrorExpand
+
     incrementMaster = sendMessage (IncMasterN 1)
     decrementMaster = sendMessage (IncMasterN (-1))
     toggleStruts    = sendMessage ToggleStruts
-    shrinkTile      = sendMessage MirrorShrink
-    expandTile      = sendMessage MirrorExpand
     retileWindow    = withFocused (windows . W.sink)
 
-    doWorkspace f i = windows . f $ XMonad.workspaces cfg !! (i - 1)
-    doMonitor   f i = screenWorkspace i >>= flip whenJust (windows . f)
+    doWorkspace f   = windows . f . (!!) (XMonad.workspaces cfg) . subtract 1
+    doMonitor   f   = (`whenJust` (windows . f)) <=< screenWorkspace
 
     viewWS          = doWorkspace W.greedyView . workId
     moveToWS        = doWorkspace W.shift      . workId
@@ -288,7 +296,7 @@ myLayout = avoidStruts $ modifyL unmodified
     -- Percent of screen to increment by when resizing panes
     delta   = 3/100
     -- Functions to run on the layout
-    modifyL = smartBorders . avoidStruts
+    modifyL = minimize . boringAuto . smartBorders . avoidStruts
 
 -- | My event logging hook
 myLogHook :: X ()
