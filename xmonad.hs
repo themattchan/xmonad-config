@@ -49,11 +49,12 @@ import           XMonad.Util.EZConfig
 
 -- | Launch XMonad
 main :: IO ()
-main = xmonadXfce
+main = do xmonadVanilla; fixFullscreen
 
 configured = ewmh . docks . myConfig
 
-xmonadVanilla = do
+xmonadVanilla = xmonad (configured defaultConfig)
+xmonadXMobar = do
   cfg <- xmobar (configured defaultConfig)
   xmonad cfg
     --  where
@@ -73,6 +74,12 @@ xmonadVanilla = do
 
 xmonadXfce = restartXfcePanel >> xmonad (configured xfceConfig)
 xmonadKde  = xmonad (configured kde4Config)
+
+fixFullscreen :: IO ()
+fixFullscreen = void $ forkIO $ do
+  let changeResolution x y = "xrandr --output `xrandr | grep \" connected\"|cut -f1 -d\" \"` --mode " <> show x <> "x" <>show y
+  spawn $ changeResolution 2048 1536
+  spawn $ changeResolution 2560 1600
 
 restartXfcePanel :: IO ()
 restartXfcePanel = void $ forkIO $ do
@@ -283,9 +290,9 @@ myWorkspaces = map show allWorkspaces
 -- FIXME: https://www.reddit.com/r/xmonad/comments/3vkrc3/does_this_layout_exist_if_not_can_anyone_suggest/
 
 -- | My window layouts
-myLayout = avoidStruts $ modifyL unmodified
+myLayout = smartBorders . avoidStruts $
+    tiled ||| Mirror tiled ||| Full
   where
-    unmodified = tiled ||| Mirror tiled ||| Full
     -- default tiling algorithm partitions the screen into two panes
     tiled   = ResizableTall nmaster delta ratio []
     -- The default number of windows in the master pane
@@ -294,8 +301,7 @@ myLayout = avoidStruts $ modifyL unmodified
     ratio   = 1/2
     -- Percent of screen to increment by when resizing panes
     delta   = 3/100
-    -- Functions to run on the layout
-    modifyL = minimize . boringAuto . smartBorders . avoidStruts
+
 
 -- | My event logging hook
 myLogHook :: X ()
